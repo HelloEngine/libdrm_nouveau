@@ -11,6 +11,7 @@ toolchain_end()
 add_repositories("xswitch-repo https://github.com/HelloEngine/xswitch-repo.git main")
 add_requires("devkit-a64", "libnx")
 target("drm_nouveau")
+    set_policy("check.auto_ignore_flags", false)
     if is_mode("debug") then
         set_basename("drm_nouveaud")
     else
@@ -32,7 +33,8 @@ target("drm_nouveau")
             "-mtune=cortex-a57", 
             "-mtp=soft", 
             "-fPIE",
-            "-ftls-model=local-exec"
+            "-ftls-model=local-exec",
+            "-MMD", "-MP", "-MF"
         }
         local cflags = {
             "-g", 
@@ -57,8 +59,15 @@ target("drm_nouveau")
         target:add("cflags", table.unpack(cflags))
         target:add("asflags", table.unpack(asflags))
         target:add("defines", "__SWITCH__")
-    end)
 
+        if is_mode("debug") then
+            target:add("cflags", "-DDEBUG=1", "-Og")
+            target:add("cxxflags", "-DDEBUG=1", "-Og")
+        else
+            target:add("cflags", "-DDEBUG=1", "-O2")
+            target:add("cxxflags", "-DDEBUG=1", "-O2")
+        end
+    end)
 
     on_install(function(target)
         os.cp(target:targetfile(), target:installdir() .. "/lib/")
